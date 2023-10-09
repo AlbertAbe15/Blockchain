@@ -71,13 +71,14 @@ class Blockchain:
         return True
     
     #Simpan hash block didalam blocknya
-    def create_block(self, proof, prev_hash, proof_of_work):
+    def create_block(self, proof, prev_hash, proof_of_work, data=None):
         block = {
             'id_block': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
             'proof': proof,
             'prev_hash': prev_hash,
-            'proof_of_work': proof_of_work
+            'proof_of_work': proof_of_work,
+            'data': data  # Menambahkan data ke dalam blok
         }
 
         # Hitung hash blok dan simpan dalam block
@@ -104,13 +105,21 @@ def get_chain():
 @app.route("/mining", methods=['GET'])
 def mining():
     prev_block = blockchain.get_last_block()
-    # get prev proof 
+    # get prev proof
     prev_proof = prev_block['proof']
-    proof, proof_of_work = blockchain.proof_of_work(prev_proof) 
-    # get prev hash 
+    proof, proof_of_work = blockchain.proof_of_work(prev_proof)
+    # get prev hash
     prev_hash = blockchain.get_hash(prev_block)
-    # create block 
-    created_block = blockchain.create_block(proof, prev_hash, proof_of_work)
+    
+    # Dapatkan panjang blockchain saat ini
+    chain_length = len(blockchain.chain)
+    
+    # Buat data transaksi yang sesuai dengan urutan blockchain
+    data_to_add = f"Transaksi {chain_length + 1}"
+    
+    # Create block dengan data yang telah dibuat
+    created_block = blockchain.create_block(proof, prev_hash, proof_of_work, data=data_to_add)
+    
     response = {
         'message': "Blockchain is successfully created",
         'created block': created_block
@@ -132,6 +141,14 @@ def is_valid():
         }
         return jsonify(response), 400
     
+@app.route("/ruined", methods=['GET'])
+def ruin_chain():
+    curr_block = blockchain.get_last_block()
+    curr_block['prev_hash'] = curr_block['hash']
+    response = {
+        'message': "Blockchain has been ruined",
+        'block': curr_block
+    }
+    return jsonify(response), 200
+    
 app.run()
-
-# 3. Fungsi dan endpoint yang mensimulasikan adanya modifikasi didalam block, sehingga chainnya tidak valid
